@@ -1,0 +1,10 @@
+CREATE TABLE leandro_mar_b_coderhouse.wall_street_journal(
+    author VARCHAR(100),
+    title VARCHAR(250),
+    description VARCHAR(500),
+    url VARCHAR(250),
+    urltoimage VARCHAR (250),
+    publishedAt TIMESTAMP,
+    content VARCHAR(1000),
+    ultima_actualizacion TIMESTAMP DEFAULT GETDATE()
+);
