@@ -1,0 +1,30 @@
+#Esta API trae los principoales articulos del Wall Street Journal, de los ultimos 6 meses
+
+import requests
+
+def obtener_noticias(api_key):
+    url = "https://newsapi.org/v2/everything"
+    parametros = {
+        'domains': 'wsj.com',
+        'apiKey': api_key
+    }
+
+    response = requests.get(url, params=parametros)
+
+    if response.status_code == 200:
+        datos_noticias = response.json()
+
+        for article in datos_noticias.get('articles', []):
+            if 'source' in article:
+                del article['source']
+
+        return datos_noticias
+    else:
+        print(f"Error al obtener noticias. Código de estado: {response.status_code}")
+        return None
+
+api_key = "6f02a6d17cbe4d7bbc6424314cbb36ee"
+
+noticias = obtener_noticias(api_key)
+
+print(noticias)
