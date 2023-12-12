@@ -1,0 +1,61 @@
+import requests
+import pandas as pd
+import psycopg2
+
+def obtener_noticias(api_key):
+    url = "https://newsapi.org/v2/everything"
+    parametros = {
+        'domains': 'wsj.com',
+        'apiKey': api_key
+    }
+
+    response = requests.get(url, params=parametros)
+
+    if response.status_code == 200:
+        datos_noticias = response.json()
+
+        for article in datos_noticias.get('articles', []):
+            if 'source' in article:
+                del article['source']
+
+        return datos_noticias['articles']
+    else:
+        print(f"Error al obtener noticias. Código de estado: {response.status_code}")
+        return None
+
+def insertar_en_redshift(dataframe, tabla, conn):
+    cursor = conn.cursor()
+
+    for index, row in dataframe.iterrows():
+        cursor.execute(f"INSERT INTO {tabla} VALUES ({', '.join(['%s']*len(row))})", tuple(row))
+
+    conn.commit()
+    cursor.close()
+
+def main():
+    api_key = "6f02a6d17cbe4d7bbc6424314cbb36ee"
+
+    noticias = obtener_noticias(api_key)
+
+    if noticias:
+        df = pd.DataFrame(noticias)
+
+        usuario = 'leandro_mar_b_coderhouse'
+        contraseña = '5pp1EmI79G'
+        host = 'data-engineer-cluster.cyhh5bfevlmn.us-east-1.redshift.amazonaws.com'
+        puerto = '5439'
+        nombre_base_datos = 'data-engineer-database'
+        nombre_esquema = 'leandro_mar_b_coderhouse'
+        nombre_tabla = 'wall_street_journal'
+
+        cadena_conexion = f'dbname={nombre_base_datos} user={usuario} password={contraseña} host={host} port={puerto}'
+        conn = psycopg2.connect(cadena_conexion)
+
+        df = df.drop_duplicates(subset=['url'])
+
+        insertar_en_redshift(df, nombre_tabla, conn)
+
+        print("Proceso completado.")
+
+if __name__ == "__main__":
+    main()
