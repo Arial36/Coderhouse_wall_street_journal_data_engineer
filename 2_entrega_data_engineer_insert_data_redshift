@@ -25,12 +25,16 @@ def obtener_noticias(api_key):
 
 def insertar_en_redshift(dataframe, tabla, conn):
     cursor = conn.cursor()
-
+    
+    total_insertados = 0
     for index, row in dataframe.iterrows():
         cursor.execute(f"INSERT INTO {tabla} VALUES ({', '.join(['%s']*len(row))})", tuple(row))
+        total_insertados += 1
 
     conn.commit()
     cursor.close()
+    
+    return total_insertados
 
 def main():
     api_key = "6f02a6d17cbe4d7bbc6424314cbb36ee"
@@ -53,9 +57,9 @@ def main():
 
         df = df.drop_duplicates(subset=['url'])
 
-        insertar_en_redshift(df, nombre_tabla, conn)
-
-        print("Proceso completado.")
+        #insertar_en_redshift(df, nombre_tabla, conn)
+        total_insertados = insertar_en_redshift(df, nombre_tabla, conn)
+        print(f"Proceso completado. Total de registros insertados: {total_insertados}")
 
 if __name__ == "__main__":
     main()
