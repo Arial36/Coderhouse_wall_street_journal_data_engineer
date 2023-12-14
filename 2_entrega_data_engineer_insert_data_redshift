@@ -28,8 +28,10 @@ def insertar_en_redshift(dataframe, tabla, conn):
     
     total_insertados = 0
     for index, row in dataframe.iterrows():
-        cursor.execute(f"INSERT INTO {tabla} VALUES ({', '.join(['%s']*len(row))})", tuple(row))
-        total_insertados += 1
+        cursor.execute(f"SELECT COUNT(*) FROM {tabla} WHERE (author = %s OR author IS NULL) AND title = %s AND description = %s", (row['author'], row['title'], row['description']))
+        if cursor.fetchone()[0] == 0:
+            cursor.execute(f"INSERT INTO {tabla} VALUES ({', '.join(['%s']*len(row))})", tuple(row))
+            total_insertados += 1
 
     conn.commit()
     cursor.close()
@@ -55,11 +57,11 @@ def main():
         cadena_conexion = f'dbname={nombre_base_datos} user={usuario} password={contraseña} host={host} port={puerto}'
         conn = psycopg2.connect(cadena_conexion)
 
-        df = df.drop_duplicates(subset=['url'])
+        total_insertados = insertar_en_redshift(df, f'{nombre_esquema}.{nombre_tabla}', conn)
 
-        #insertar_en_redshift(df, nombre_tabla, conn)
-        total_insertados = insertar_en_redshift(df, nombre_tabla, conn)
-        print(f"Proceso completado. Total de registros insertados: {total_insertados}")
+        print(f"Se insertaron {total_insertados} registros en la tabla {nombre_esquema}.{nombre_tabla}")
+    else:
+        print("No se encontraron noticias para insertar")
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
